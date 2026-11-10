@@ -1,7 +1,8 @@
 
+
 /*
  PROJECT: COORDINATE BASED DRONE SIMULATOR
- Based on C Programming Assignments 1 to 9
+ TURBO C COMPATIBL
 */
 
 #include <stdio.h>
@@ -10,8 +11,9 @@
 #include <string.h>
 
 #define GRID 10
-#define MAXPOINTS 5
 #define SENSORS 5
+
+/* EXPERIMENT 8: STRUCTURE */
 
 struct Sensor
 {
@@ -20,28 +22,35 @@ struct Sensor
     int status;
 };
 
-int absoluteValue(int number)
+/* EXPERIMENT 2: ARITHMETIC */
+
+int absoluteValue(int n)
 {
-    if (number < 0)
-        return -number;
-    return number;
+    if (n < 0)
+        return -n;
+    else
+        return n;
 }
 
-float calculateAverage(int readings[], int count)
+/* EXPERIMENT 5: FUNCTION AND ARRAY */
+
+float calculateAverage(int a[], int n)
 {
-    int i, total = 0;
+    int i, sum = 0;
 
-    for (i = 0; i < count; i++)
-        total = total + readings[i];
+    for (i = 0; i < n; i++)
+        sum = sum + a[i];
 
-    return (float)total / count;
+    return (float)sum / n;
 }
 
-void displayPWM(int duty)
+/* EXPERIMENT 4: PWM USING FOR LOOP */
+
+void showPWM(int duty)
 {
     int i;
 
-    printf("\nPWM SIGNAL: ");
+    printf("\nMotor PWM: ");
 
     for (i = 1; i <= 10; i++)
     {
@@ -54,316 +63,249 @@ void displayPWM(int duty)
     printf("\n");
 }
 
-void displayMap(char map[GRID+1][GRID+1],
-                int droneX, int droneY, int showDrone)
+/* DISPLAY DRONE MAP */
+
+void displayMap(char map[11][11], int x, int y)
 {
-    int row, col;
+    int i, j;
 
-    printf("\n          DRONE PATH MAP\n\n");
+    printf("\n          DRONE MAP\n\n");
 
-    for (row = GRID; row >= 1; row--)
+    for (i = GRID; i >= 1; i--)
     {
-        printf("%2d | ", row);
+        printf("%2d | ", i);
 
-        for (col = 1; col <= GRID; col++)
+        for (j = 1; j <= GRID; j++)
         {
-            if (showDrone && col == droneX &&
-                row == droneY)
+            if (j == x && i == y)
                 printf(" D ");
             else
-                printf(" %c ", map[row][col]);
+                printf(" %c ", map[i][j]);
         }
 
         printf("\n");
     }
 
-    printf("   ");
+    printf("    ");
 
-    for (col = 1; col <= GRID; col++)
+    for (j = 1; j <= GRID; j++)
         printf("---");
 
-    printf("\n    ");
+    printf("\n     ");
 
-    for (col = 1; col <= GRID; col++)
-        printf("%2d ", col);
+    for (j = 1; j <= GRID; j++)
+        printf("%2d ", j);
 
     printf("\n\n");
-    printf("S=START W=WAYPOINT F=FINISH\n");
-    printf("*=PATH D=DRONE\n");
+
+    printf("S = START   F = FINISH\n");
+    printf("p=PATH     D = DRONE\n");
 }
 
-void showDroneStep(char map[GRID+1][GRID+1],
-                   int x, int y, int tx, int ty,
-                   int steps, int battery, char direction)
+/* DISPLAY FLIGHT MOVEMENT */
+
+void showFlight(char map[11][11],
+                int x, int y,
+                int tx, int ty,
+                int steps, int battery,
+                char direction)
 {
     clrscr();
 
     printf("====================================\n");
-    printf("       DRONE PATH SIMULATOR\n");
+    printf("       AUTONOMOUS DRONE\n");
     printf("====================================\n");
 
     printf("STATUS      : FLYING\n");
     printf("POSITION    : (%d,%d)\n", x, y);
-    printf("TARGET      : (%d,%d)\n", tx, ty);
+    printf("DESTINATION : (%d,%d)\n", tx, ty);
+
+    /* EXPERIMENT 6: SWITCH CASE */
+
     printf("DIRECTION   : ");
 
-    if (direction == 'R')
-        printf("RIGHT\n");
-    else if (direction == 'L')
-        printf("LEFT\n");
-    else if (direction == 'U')
-        printf("UP\n");
-    else
-        printf("DOWN\n");
+    switch (direction)
+    {
+        case 'R':
+            printf("RIGHT\n");
+            break;
+
+        case 'L':
+            printf("LEFT\n");
+            break;
+
+        case 'U':
+            printf("UP\n");
+            break;
+
+        case 'D':
+            printf("DOWN\n");
+            break;
+    }
 
     printf("STEPS       : %d\n", steps);
     printf("BATTERY     : %d%%\n", battery);
 
-    displayMap(map, x, y, 1);
+    displayMap(map, x, y);
 
-    delay(300);
+    delay(900);
 }
+
+/* MAIN FUNCTION */
 
 int main()
 {
-    char pilot[30], command[10];
-    char map[GRID+1][GRID+1];
+    int startX, startY;
+    int destX, destY;
 
-    int readings[SENSORS];
+    int x, y;
+    int oldX, oldY;
+
+    int steps, battery;
+    int distance, duty;
+
+    int i, j;
+
+    int sensorValues[SENSORS];
     int *ptr;
 
     struct Sensor frontSensor;
 
-    int mode;
-    int startX, startY;
-    int wayX[MAXPOINTS], wayY[MAXPOINTS];
-
-    int pointCount, i, row, col;
-    int x, y, targetX, targetY;
-    int oldX, oldY;
-
-    int steps, battery, duty;
-
-    int sensorSum, sensorDifference, sensorProduct;
-
     float average;
+
+    char command[5];
     char direction;
 
+    char map[11][11];
+
+    int mode;
+
     clrscr();
+
+    /* EXPERIMENT 1: INPUT AND OUTPUT */
 
     printf("====================================\n");
     printf("       DRONE PATH SIMULATOR\n");
     printf("====================================\n");
 
-    /* EXPERIMENT 1: INPUT AND OUTPUT */
+    printf("\nEnter Starting Coordinates (X Y): ");
+    scanf("%d %d", &startX, &startY);
 
-    printf("\nEnter Pilot Name: ");
-    scanf("%29s", pilot);
-
-    printf("\nWelcome %s!\n", pilot);
-
-    /* EXPERIMENT 6: SWITCH CASE */
-
-    printf("\nSELECT DRONE MODE\n");
-    printf("1. IDLE\n");
-    printf("2. ACTIVE\n");
-    printf("3. ERROR\n");
-
-    printf("\nEnter Mode: ");
-    scanf("%d", &mode);
-
-    switch (mode)
-    {
-        case 1:
-            printf("Drone is IDLE.\n");
-            getch();
-            return 0;
-
-        case 2:
-            printf("Drone is ACTIVE.\n");
-            break;
-
-        case 3:
-            printf("Drone ERROR. Mission stopped.\n");
-            getch();
-            return 0;
-
-        default:
-            printf("Invalid Mode.\n");
-            getch();
-            return 0;
-    }
-
-    /* EXPERIMENT 7: STRING MANIPULATION */
-
-    printf("\nEnter Command START / STOP: ");
-    scanf("%9s", command);
-
-    if (strcmp(command, "STOP") == 0)
-    {
-        printf("Drone Stopped.\n");
-        getch();
-        return 0;
-    }
-    else if (strcmp(command, "START") != 0)
-    {
-        printf("Invalid Command. Use START or STOP.\n");
-        getch();
-        return 0;
-    }
-
-    printf("Mission Started!\n");
-
-    /* ENTER STARTING COORDINATES */
-
-    printf("\nEnter Starting X (1-10): ");
-    scanf("%d", &startX);
-
-    printf("Enter Starting Y (1-10): ");
-    scanf("%d", &startY);
+    /* EXPERIMENT 3: IF ELSE */
 
     if (startX < 1 || startX > GRID ||
         startY < 1 || startY > GRID)
     {
-        printf("Invalid Starting Coordinates.\n");
+        printf("\nInvalid Starting Coordinates!");
         getch();
         return 0;
     }
 
-    /* ENTER WAYPOINTS */
+    printf("\nEnter Destination Coordinates (X Y): ");
+    scanf("%d %d", &destX, &destY);
 
-    printf("\nEnter Number of Waypoints (1-5): ");
-    scanf("%d", &pointCount);
-
-    if (pointCount < 1 || pointCount > MAXPOINTS)
+    if (destX < 1 || destX > GRID ||
+        destY < 1 || destY > GRID)
     {
-        printf("Invalid Number of Waypoints.\n");
+        printf("\nInvalid Destination Coordinates!");
         getch();
         return 0;
     }
 
-    for (i = 0; i < pointCount; i++)
-    {
-        printf("\nEnter Waypoint %d (X Y): ", i+1);
-        scanf("%d %d", &wayX[i], &wayY[i]);
+    /* EXPERIMENT 7: STRING COMPARISON */
 
-        if (wayX[i] < 1 || wayX[i] > GRID ||
-            wayY[i] < 1 || wayY[i] > GRID)
-        {
-            printf("Invalid Waypoint.\n");
-            getch();
-            return 0;
-        }
+    printf("\nReady for Takeoff? (Y/N): ");
+    scanf("%4s", command);
+
+    if (strcmp(command, "Y") != 0 &&
+        strcmp(command, "y") != 0)
+    {
+        printf("\nDrone Mission Cancelled!");
+        getch();
+        return 0;
     }
 
-    /* EXPERIMENT 5: ARRAY AND FUNCTION */
+    /* EXPERIMENT 6: SWITCH CASE */
 
-    printf("\nEnter 5 Sensor Readings (0-100):\n");
+    mode = 2;
 
-    for (i = 0; i < SENSORS; i++)
+    switch (mode)
     {
-        printf("Sensor %d: ", i+1);
-        scanf("%d", &readings[i]);
-
-        if (readings[i] < 0 || readings[i] > 100)
-        {
-            printf("Invalid Reading.\n");
+        case 1:
+            printf("\nDrone Idle");
             getch();
             return 0;
-        }
-    }
 
-    /* EXPERIMENT 2: ARITHMETIC OPERATIONS */
+        case 2:
+            printf("\nDrone Active");
+            break;
 
-    sensorSum = readings[0] + readings[1];
-
-    sensorDifference =
-        absoluteValue(readings[0] - readings[1]);
-
-    sensorProduct = readings[0] * readings[1];
-
-    printf("\nSENSOR CALCULATIONS\n");
-
-    printf("Sum        : %d\n", sensorSum);
-    printf("Difference : %d\n", sensorDifference);
-    printf("Product    : %d\n", sensorProduct);
-
-    average = calculateAverage(readings, SENSORS);
-
-    printf("Average    : %.2f\n", average);
-
-    /* EXPERIMENT 9: POINTER AND ARRAY */
-
-    ptr = readings;
-
-    printf("\nSENSOR READINGS USING POINTER\n");
-
-    for (i = 0; i < SENSORS; i++)
-    {
-        printf("Sensor %d : %d\n",
-               i+1, *(ptr+i));
+        default:
+            printf("\nDrone Error");
+            getch();
+            return 0;
     }
 
     /* EXPERIMENT 8: STRUCTURE */
 
+    sensorValues[0] = 80;
+    sensorValues[1] = 75;
+    sensorValues[2] = 90;
+    sensorValues[3] = 85;
+    sensorValues[4] = 70;
+
     frontSensor.id = 1;
-    frontSensor.reading = readings[0];
+    frontSensor.reading = sensorValues[0];
     frontSensor.status = 1;
 
-    printf("\nFRONT SENSOR INFORMATION\n");
+    /* EXPERIMENT 9: POINTER */
 
-    printf("Sensor ID : %d\n", frontSensor.id);
-    printf("Reading   : %d\n", frontSensor.reading);
-    printf("Status    : ON\n");
+    ptr = sensorValues;
 
-    /* EXPERIMENT 3: IF ELSE */
+    /* EXPERIMENT 5: FUNCTION */
 
-    printf("\nOBSTACLE DETECTION\n");
+    average = calculateAverage(ptr, SENSORS);
+
+    /* AUTOMATIC SENSOR CHECK */
 
     if (frontSensor.reading <= 20)
     {
-        printf("Obstacle Detected!\n");
-        printf("Drone Flight Stopped.\n");
+        printf("\nObstacle Detected!");
+        printf("\nFlight Stopped!");
         getch();
         return 0;
     }
     else
     {
-        printf("Path Clear. Drone Can Fly.\n");
+        printf("\nPath Clear!");
     }
 
-    /* EXPERIMENT 4: PWM USING FOR LOOP */
+    printf("\nAverage Sensor Reading: %.2f", average);
 
-    printf("\nEnter PWM Duty (0-10): ");
-    scanf("%d", &duty);
+    /* EXPERIMENT 2: COORDINATE CALCULATION */
 
-    if (duty < 0 || duty > 10)
+    distance = absoluteValue(destX - startX)
+             + absoluteValue(destY - startY);
+
+    printf("\nTotal Route Distance: %d grid units\n",
+           distance);
+
+    /* EXPERIMENT 4: PWM SIMULATION */
+
+    duty = 7;
+
+    showPWM(duty);
+
+    /* CREATE MAP */
+
+    for (i = 1; i <= GRID; i++)
     {
-        printf("Invalid PWM Duty.\n");
-        getch();
-        return 0;
-    }
-
-    displayPWM(duty);
-
-    /* CREATE DRONE MAP */
-
-    for (row = 1; row <= GRID; row++)
-    {
-        for (col = 1; col <= GRID; col++)
-        {
-            map[row][col] = '.';
-        }
+        for (j = 1; j <= GRID; j++)
+            map[i][j] = '.';
     }
 
     map[startY][startX] = 'S';
-
-    for (i = 0; i < pointCount; i++)
-    {
-        map[wayY[i]][wayX[i]] = 'W';
-    }
-
-    map[wayY[pointCount-1]][wayX[pointCount-1]] = 'F';
+    map[destY][destX] = 'F';
 
     x = startX;
     y = startY;
@@ -377,119 +319,102 @@ int main()
     printf("       DRONE ROUTE CREATED\n");
     printf("====================================\n");
 
-    printf("Pilot: %s\n", pilot);
+    printf("\nStarting Point: (%d,%d)", startX, startY);
+    printf("\nDestination  : (%d,%d)\n", destX, destY);
 
-    printf("Starting Point: (%d,%d)\n",
-           startX, startY);
+    displayMap(map, x, y);
 
-    for (i = 0; i < pointCount; i++)
-    {
-        printf("Waypoint %d: (%d,%d)\n",
-               i+1, wayX[i], wayY[i]);
-    }
-
-    displayMap(map, x, y, 1);
-
-    printf("\nPress any key to START FLIGHT...");
+    printf("\nPress any key to TAKE OFF...");
     getch();
 
-    /* AUTOMATIC COORDINATE FOLLOWING */
+    /* AUTOMATIC X AXIS MOVEMENT */
 
-    for (i = 0; i < pointCount; i++)
+    while (x != destX)
     {
-        targetX = wayX[i];
-        targetY = wayY[i];
+        oldX = x;
+        oldY = y;
 
-        /* MOVE ALONG X AXIS */
-
-        while (x != targetX)
+        if (x < destX)
         {
-            oldX = x;
-            oldY = y;
-
-            if (x < targetX)
-            {
-                x++;
-                direction = 'R';
-            }
-            else
-            {
-                x--;
-                direction = 'L';
-            }
-
-            steps++;
-
-            battery = 100 - (steps * 2);
-
-            if (battery < 0)
-                battery = 0;
-
-            map[oldY][oldX] = '*';
-
-            showDroneStep(map, x, y,
-                          targetX, targetY,
-                          steps, battery, direction);
+            x++;
+            direction = 'R';
+        }
+        else
+        {
+            x--;
+            direction = 'L';
         }
 
-        /* MOVE ALONG Y AXIS */
+        steps++;
 
-        while (y != targetY)
+        battery = 100 - (steps * 2);
+
+        if (battery < 0)
+            battery = 0;
+
+        map[oldY][oldX] = '*';
+
+        showFlight(map, x, y,
+                   destX, destY,
+                   steps, battery, direction);
+    }
+
+    /* AUTOMATIC Y AXIS MOVEMENT */
+
+    while (y != destY)
+    {
+        oldX = x;
+        oldY = y;
+
+        if (y < destY)
         {
-            oldX = x;
-            oldY = y;
-
-            if (y < targetY)
-            {
-                y++;
-                direction = 'U';
-            }
-            else
-            {
-                y--;
-                direction = 'D';
-            }
-
-            steps++;
-
-            battery = 100 - (steps * 2);
-
-            if (battery < 0)
-                battery = 0;
-
-            map[oldY][oldX] = '*';
-
-            showDroneStep(map, x, y,
-                          targetX, targetY,
-                          steps, battery, direction);
+            y++;
+            direction = 'U';
+        }
+        else
+        {
+            y--;
+            direction = 'D';
         }
 
-        map[y][x] = 'W';
+        steps++;
+
+        battery = 100 - (steps * 2);
+
+        if (battery < 0)
+            battery = 0;
+
+        map[oldY][oldX] = '*';
+
+        showFlight(map, x, y,
+                   destX, destY,
+                   steps, battery, direction);
     }
 
     /* FINAL MISSION REPORT */
 
-    map[y][x] = 'F';
+    map[destY][destX] = 'F';
 
     clrscr();
 
     printf("====================================\n");
-    printf("      DRONE MISSION COMPLETED\n");
+    printf("       MISSION COMPLETED\n");
     printf("====================================\n");
 
-    displayMap(map, x, y, 0);
+    displayMap(map, x, y);
 
-    printf("\nPilot Name       : %s\n", pilot);
-    printf("Final Position   : (%d,%d)\n", x, y);
-    printf("Waypoints Reached: %d\n", pointCount);
-    printf("Total Grid Steps : %d\n", steps);
-    printf("Battery Remaining: %d%%\n", battery);
+    printf("\nStarting Point : (%d,%d)", startX, startY);
+    printf("\nFinal Position : (%d,%d)", x, y);
 
-    printf("\nMission Status : SUCCESSFUL\n");
-    printf("Drone Status  : LANDED\n");
+    printf("\nTotal Distance : %d grid units", distance);
+    printf("\nTotal Steps    : %d", steps);
+    printf("\nBattery Left   : %d%%", battery);
 
-    printf("\n====================================\n");
-    printf("Press any key to exit.\n");
+    printf("\n\nDRONE STATUS  : LANDED");
+    printf("\nMISSION STATUS: SUCCESSFUL");
+
+    printf("\n====================================");
+    printf("\nPress any key to exit.");
 
     getch();
 
